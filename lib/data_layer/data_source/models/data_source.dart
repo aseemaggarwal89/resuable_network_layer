@@ -3,11 +3,6 @@
 // export './product_detail_dto.dart';
 
 enum APIRequestNodeType {
-  product,
   brand,
-  category,
-  orders,
   auth,
-  userFavorites,
-  colorInfo,
 }

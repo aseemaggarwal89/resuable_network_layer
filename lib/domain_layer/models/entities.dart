@@ -6,4 +6,3 @@ export 'authentication_status.dart';
 export './brand_dto.dart';
 export './user_dto.dart';
 export './base_response.dart';
-export './base_response.dart';

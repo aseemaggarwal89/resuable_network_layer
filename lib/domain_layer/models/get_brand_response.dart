@@ -1,4 +1,6 @@
 
+import 'package:resuable_network_layer/data_layer/data_source/mapper/JsonSerializable.dart';
+
 import '../domain_layer.dart';
 
 class GetBrandsResponse extends GetBaseResponseDTO<BrandDTO> {
@@ -10,8 +12,10 @@ class GetBrandsResponse extends GetBaseResponseDTO<BrandDTO> {
         json, (json) => BrandDTO.fromJson(json as Map<String, dynamic>));
     return GetBrandsResponse(data.results, data.data, data.status);
   }
-
-  Map<String, dynamic> toJson() {
-    return super.toJsonForObject((value) => value.toJson());
+  
+  @override
+  GetBrandsResponse fromJson(Map<String, dynamic> json) {
+      GetBrandsResponse.fromJson(json);
+      return this;
   }
 }

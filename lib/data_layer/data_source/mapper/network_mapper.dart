@@ -1,54 +1,40 @@
 
-class Generic {
-  static T fromJson<T>(dynamic json) {
-    try {
-      switch (T) {
-        // case GetProductsResponse:
-        //   final data = GetProductsResponse.fromJson(json) as T;
-        //   return data;
-        // case GetBrandsResponse:
-        //   final data = GetBrandsResponse.fromJson(json) as T;
-        //   return data;
-        // case GetCategoriesResponse:
-        //   final data = GetCategoriesResponse.fromJson(json) as T;
-        //   return data;
-        // case GetProductCountResponse:
-        //   final data = GetProductCountResponse.fromJson(json) as T;
-        //   return data;
-        // case GetProductDetailResponse:
-        //   final data = GetProductDetailResponse.fromJson(json) as T;
-        //   return data;
-        // case AuthenticateResponseDTO:
-        //   final data = AuthenticateResponseDTO.fromJson(json) as T;
-        //   return data;
-        // case GetColorInfoResponse:
-        //   final data = GetColorInfoResponse.fromJson(json) as T;
-        //   return data;
+import 'package:resuable_network_layer/domain_layer/utils/network_exceptions.dart';
 
-        default:
-          if (json is List) {
-            return _fromJsonList<T>(json) as T;
-          } else if (T == bool ||
+class GenericFactory {
+  static final Map<Type, Function(Map<String, dynamic>)> _factories = {};
+
+  static void register<T>(T Function(Map<String, dynamic>) factory) {
+    _factories[T] = factory;
+  }
+
+  static T fromJson<T>(Map<String, dynamic> json) {
+    final factory = _factories[T];
+    if (factory != null) {
+        return factory(json) as T;
+    } else {
+      if (json is List) {
+        return _fromJsonList<T>(json as List) as T;
+      } else if (T == bool ||
               T == String ||
               T == int ||
               T == double ||
               T == Map<String, dynamic>) {
-            // primitives
+                         // primitives
             if (json is bool ||
                 json is String ||
                 json is int ||
                 json is double ||
+                // ignore: unnecessary_type_check
                 json is Map<String, dynamic>) {
-              return json;
+              return json as T;
             } else {
               throw const NetworkExceptions.unableToDecodeJson(null);
             }
-          } else {
-            throw const NetworkExceptions.unableToDecodeJson(null);
-          }
+   
+      } else {
+         throw const NetworkExceptions.unableToDecodeJson(null);
       }
-    } catch (e) {
-      throw NetworkExceptions.unableToDecodeJson(e);
     }
   }
 

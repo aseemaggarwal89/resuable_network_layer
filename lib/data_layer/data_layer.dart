@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:resuable_network_layer/data_layer/data_source/mapper/network_mapper.dart';
+import 'package:resuable_network_layer/domain_layer/models/get_brand_response.dart';
 import '/data_layer/api_repository/api_repository.dart';
 import '/data_layer/data_source/remote/app_base_api_client.dart';
 import '/data_layer/networkLayer/appnetworking/networkClient/http_client.dart';
@@ -11,13 +13,19 @@ export 'data_source/models/data_source.dart';
 
 class DataLayer {
   static Future<void> initializeDataLayerDependencies(GetIt injector) async {
+    registerJsonFactories();
     injector.registerSingleton<IAppHttpClient>(AppHttpClient());
     injector.registerLazySingleton<INetworkService>(() {
-      return AppAPIClient(injector(), injector<AppConfiguration>().appURLs);
+      return AppAPIClient(injector(), injector<IAppConfiguration>());
     });
 
     // API
     injector.registerFactory<INetworkAPIRepository>(
         () => NetworkAPIRepository(injector()));
   }
+}
+
+void registerJsonFactories() {
+  GenericFactory.register<GetBrandsResponse>(GetBrandsResponse.fromJson);
+  GenericFactory.register<AuthenticateResponseDTO>(AuthenticateResponseDTO.fromJson);
 }

@@ -11,9 +11,12 @@ import 'package:flutter/foundation.dart';
 
 class AppAPIClient extends INetworkService {
   final IAppHttpClient httpClient;
-  Map<AppURLsType, String> appUrls;
+  final IAppConfiguration appConfiguration;
+  Map<AppURLsType, String> get appUrls {
+    return appConfiguration.appURLs;
+  }
 
-  AppAPIClient(this.httpClient, this.appUrls);
+  AppAPIClient(this.httpClient, this.appConfiguration);
 
   @override
   Future<ApiResult<T>> loadRequest<T>(IHttpRequest request) async {
@@ -129,6 +132,6 @@ Future<ApiResult<T>> parseDataInBackground<T>(dynamic jsonData) async {
 }
 
 ApiResult<T> _parse<T>(dynamic jsonData) {
-  final data = Generic.fromJson<T>(jsonData);
+  final data = GenericFactory.fromJson<T>(jsonData);
   return ApiResult.success(data);
 }

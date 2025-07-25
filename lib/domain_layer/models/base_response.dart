@@ -1,11 +1,12 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:resuable_network_layer/data_layer/data_source/mapper/JsonSerializable.dart';
 
 part 'base_response.g.dart';
 
 @JsonSerializable(
   genericArgumentFactories: true,
 )
-class GetBaseResponseDTO<T> {
+class GetBaseResponseDTO<T> extends JsonFactory<GetBaseResponseDTO<T>> {
   String status;
   int results;
   @JsonKey(name: 'data')
@@ -24,6 +25,12 @@ class GetBaseResponseDTO<T> {
 
   Map<String, dynamic> toJsonForObject(Object Function(T value) toJsonT) =>
       _$GetBaseResponseDTOToJson(this, toJsonT);
+      
+   @override
+    GetBaseResponseDTO<T> fromJson(Map<String, dynamic> json) {
+      // TODO: implement fromJson
+      throw UnimplementedError();
+    }
 }
 
 @JsonSerializable(

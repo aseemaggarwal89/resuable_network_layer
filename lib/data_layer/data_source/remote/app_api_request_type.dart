@@ -21,13 +21,6 @@ abstract class ApiRequestType with _$ApiRequestType {
     @Default("") String path,
   }) = _PostDataRequest;
 
-  const factory ApiRequestType.product({
-    @Default(HttpMethod.get) HttpMethod method,
-    @Default(APIRequestNodeType.product) APIRequestNodeType nodeType,
-    @Default(AppURLsType.ugc) AppURLsType baseUrlType,
-    @Default("") String path,
-  }) = _ProductRequest;
-
   const factory ApiRequestType.auth({
     @Default(HttpMethod.post) HttpMethod method,
     @Default(APIRequestNodeType.auth) APIRequestNodeType nodeType,
@@ -45,8 +38,6 @@ extension ApiRequesstTypeExtension on ApiRequestType {
           return nodeType.nodeUrlEndPoint + path;
         case _GetAllRequest(nodeType: var nodeType, path: var path):
           return nodeType.nodeUrlEndPoint + path;
-        case _ProductRequest(nodeType: var nodeType, path: var path):
-          return nodeType.nodeUrlEndPoint + path;
     }
     return "";
   }
@@ -60,8 +51,6 @@ extension ApiRequesstTypeExtension on ApiRequestType {
         case _PostDataRequest():
           break;
         case _GetAllRequest():
-          break;
-        case _ProductRequest():
           break;
     }
 
@@ -83,8 +72,6 @@ extension ApiRequesstTypeExtension on ApiRequestType {
         case _PostDataRequest(nodeType: var nodeType):
           return nodeType.responseType;
         case _GetAllRequest(nodeType: var nodeType):
-          return nodeType.responseType;
-        case _ProductRequest(nodeType: var nodeType):
           return nodeType.responseType;
     }
     return DataResponseType.json;
@@ -109,20 +96,10 @@ extension DataResponseTypeExtension on DataResponseType {
 extension RequestTypeExtension on APIRequestNodeType {
   String get nodeUrlEndPoint {
     switch (this) {
-      case APIRequestNodeType.product:
-        return '/products';
       case APIRequestNodeType.brand:
         return '/brands';
-      case APIRequestNodeType.category:
-        return '/categories';
-      case APIRequestNodeType.orders:
-        return '/orders';
       case APIRequestNodeType.auth:
         return '/users';
-      case APIRequestNodeType.userFavorites:
-        return '/userFavorites';
-      case APIRequestNodeType.colorInfo:
-        return '/colorInfo';
     }
   }
 
@@ -130,12 +107,7 @@ extension RequestTypeExtension on APIRequestNodeType {
     switch (this) {
       case APIRequestNodeType.auth:
         return {};
-      case APIRequestNodeType.orders:
-      case APIRequestNodeType.product:
-      case APIRequestNodeType.userFavorites:
       case APIRequestNodeType.brand:
-      case APIRequestNodeType.category:
-      case APIRequestNodeType.colorInfo:
         return {};
     }
   }
@@ -144,25 +116,15 @@ extension RequestTypeExtension on APIRequestNodeType {
     switch (this) {
       case APIRequestNodeType.auth:
         return true;
-      case APIRequestNodeType.orders:
-      case APIRequestNodeType.product:
-      case APIRequestNodeType.userFavorites:
       case APIRequestNodeType.brand:
-      case APIRequestNodeType.category:
-      case APIRequestNodeType.colorInfo:
         return false;
     }
   }
 
   DataResponseType get responseType {
     switch (this) {
-      case APIRequestNodeType.orders:
       case APIRequestNodeType.auth:
-      case APIRequestNodeType.product:
-      case APIRequestNodeType.userFavorites:
       case APIRequestNodeType.brand:
-      case APIRequestNodeType.category:
-      case APIRequestNodeType.colorInfo:
         return DataResponseType.json;
     }
   }

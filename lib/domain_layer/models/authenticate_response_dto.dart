@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import '/domain_layer/domain_layer.dart';
+import 'package:resuable_network_layer/domain_layer/models/user_dto.dart';
 
 part 'authenticate_response_dto.g.dart';
 

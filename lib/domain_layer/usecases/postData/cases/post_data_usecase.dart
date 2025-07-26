@@ -1,7 +1,6 @@
 import 'dart:async';
-
-import 'package:resuable_network_layer/domain_layer/models/signup_user_dto.dart';
-
+import '../../../models/authenticate_response_dto.dart';
+import '../../../models/signup_user_dto.dart';
 import '/domain_layer/domain_layer.dart';
 import '/domain_layer/repositories/api_repository.dart';
 

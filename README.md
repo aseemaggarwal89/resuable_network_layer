@@ -2,11 +2,11 @@
 
 # Data Layer Documentation
 
-This documentation describes the architecture, abstractions, and flow of the `data_layer` in the PR [#1: added domain layer and data layer](https://github.com/aseemaggarwal89/resuable_network_layer/pull/1). The design leverages dependency injection, interfaces, and enums to provide a scalable, maintainable, and testable REST API client.
+This documentation describes the architecture, abstractions, and flow of the `data_layer`. The design leverages clean architecture principles, dependency injection, abstraction, and enums to provide a scalable, maintainable, and testable REST API client.
 
 ---
 
-## Overview
+## Architectural Overview
 
 The data layer is responsible for:
 
@@ -15,6 +15,19 @@ The data layer is responsible for:
 - Enabling easy addition of new API endpoints via enums and abstraction.
 - Handling deserialization, error mapping, and environment configuration.
 - Facilitating unit testing and code reusability by using dependency injection and interfaces.
+
+### The data layer is implemented using **Clean Architecture**, which emphasizes:
+
+- **Separation of concerns:** Each layer has a single responsibility.
+- **Abstraction:** Interfaces and abstract classes decouple implementation from usage.
+- **Dependency Injection:** All dependencies are provided externally, enabling easy testing and reusability.
+- **Layered Architecture:** Clear distinction between data, domain, and presentation layers.
+
+### Layered Structure
+
+- **Presentation Layer:** UI, ViewModels, etc.
+- **Domain Layer:** Use cases, business logic, abstract repositories.
+- **Data Layer:** Concrete implementations, network services, DTOs, mappers.
 
 ---
 
@@ -26,6 +39,7 @@ The data layer is responsible for:
 
 - **Role:** Defines the contract for creating REST API requests.
 - **Purpose:** Allows for multiple implementations, enabling extensibility.
+
 
 #### INetworkService
 
@@ -57,8 +71,8 @@ The data layer is responsible for:
 
 #### AppAPIRequest (implements IHttpRequest)
 
-- **Role:** Concrete implementation for building REST API requests.
-- **Composition:** Uses `ApiRequestType` to configure requests dynamically.
+- Concrete implementation for building REST API requests.
+- Uses `ApiRequestType` for dynamic endpoint configuration.
 
 #### ApiRequestType (abstract class)
 
@@ -83,7 +97,6 @@ The data layer is responsible for:
 - **Responsibilities:**
   - Executes HTTP requests using the injected client.
   - Uses configuration to select environment/base URL.
-  - Determines response type using `DataResponseType` and `APIRequestNodeType`.
   - Transforms JSON to data model in a background thread using `GenericFactory`.
   - Requires all models to be registered with `GenericFactory`.
 
@@ -93,12 +106,61 @@ The data layer is responsible for:
 - **Responsibilities:**
   - Executes HTTP requests.
   - Maps Dio exceptions to `AppNetworkResponseException`.
-  - Maps `AppNetworkResponseException` to `NetworkExceptions` for UI-friendly error messages.
+  - `AppNetworkResponseException` is domain layer exception to avoid dependency of Dio package.
 
-#### AppNetworkResponseException & NetworkExceptions
-
+#### Exception Handling
+- Maps `AppNetworkResponseException` to `NetworkExceptions` for UI-friendly error messages in domain layer
 - **Role:** Exception abstraction and error mapping.
 - **Purpose:** Improves readability and user messaging for error scenarios.
+
+---
+
+## Clean Architecture & Dependency Injection
+
+- All core components (services, clients, repositories) are injected via constructors.
+- Interfaces are used throughout, allowing for unit testing and easy swapping/mocking of implementations.
+- **No concrete implementation is directly referenced in the domain or presentation layers.**
+- **INetworkAPIRepository** is the bridge between domain/business logic and the data layer.
+
+---
+
+## Example Use Case: Fetching Brand Data
+
+The following is an example of a domain use case that is cleanly separated from implementation details using dependency injection and abstraction:
+
+```dart
+abstract class IGetAllUseCaseUseCases {
+  Future<List<BrandDTO>> fetchAllBrandData();
+}
+
+class GetAllUseCase implements IGetAllUseCaseUseCases {
+  final INetworkAPIRepository _networkAPIRepository;
+
+  GetAllUseCase(this._networkAPIRepository);
+
+  @override
+  Future<List<BrandDTO>> fetchAllBrandData() async {
+    ApiResult<GetBrandsResponse> result =
+        await _networkAPIRepository.getDataAll(APIRequestNodeType.brand);
+    return result.when(
+        success: (success) {
+          if (success != null && success.status == "success") {
+            return success.data ?? [];
+          } else {
+            return throw const NetworkExceptions.notFound("Data not available");
+          }
+        },
+        failure: (failure) => throw failure);
+  }
+}
+```
+
+**Explanation:**
+
+- The use case (`GetAllUseCase`) depends only on the `INetworkAPIRepository` interface.
+- It doesn't know about HTTP, endpoints, or API specifics—the data layer handles those via abstraction and enums.
+- All dependencies are injected, supporting clean architecture and testability.
+- Error handling is uniform and mapped to user-friendly exceptions.
 
 ---
 
@@ -113,65 +175,50 @@ classDiagram
     AppAPIClient --> IAppConfiguration : depends on
     IAppHttpClient <|.. AppHttpClient
     AppHttpClient --> IDioClient : uses
-    AppAPIClient --> IHttpRequest : builds request
+    AppAPIClient --> IHttpRequest : builds Dio RequestOptions
     IHttpRequest <|.. AppAPIRequest
     AppAPIRequest --> ApiRequestType : has
     ApiRequestType --> APIRequestNodeType : uses enum
     AppAPIClient --> GenericFactory : transforms models
+    IGetAllUseCaseUseCases <|.. GetAllUseCase
+    GetAllUseCase --> INetworkAPIRepository : uses
 ```
 
 ---
 
 ## How It Works: Request Flow
 
-1. **Repository Layer:**  
-   Calls a method on `INetworkAPIRepository`, supplying an `APIRequestNodeType` and required parameters.
-
-2. **Service Layer:**  
-   The repository delegates the request to `INetworkService` (implemented by `AppAPIClient`).
-
+1. **Domain Layer:**  
+   Use case (e.g., `fetchAllBrandData`) calls the repository `INetworkAPIRepository`, supplying an `APIRequestNodeType` and required parameters.
+2. **Repository Layer:**  
+   Calls `INetworkService` (implemented by AppAPIClient) calls method `loadRequest`, supplying an `IHttpRequest` parameter.
 3. **Request Construction:**  
-   `AppAPIClient` creates an `AppAPIRequest` using the appropriate `ApiRequestType` (based on `APIRequestNodeType`).
-
+   `AppAPIClient` builds an `RequestOptions` using `IHttpRequest` (implemented by `AppAPIRequest`)
 4. **Request Execution:**  
-   `AppHttpClient` (via `IAppHttpClient`) executes the HTTP request using `IDioClient` (Dio library).
-
+  `IAppHttpClient` (implemented by `AppHttpClient`) executes the HTTP request using `IDioClient` (Dio library).
 5. **Error Handling:**  
    Dio exceptions are mapped to `AppNetworkResponseException`, and then to domain-specific `NetworkExceptions` for better UI messaging.
-
-6. **Response Parsing:**  
+6. **Response Parsing:**
    `AppAPIClient` uses `GenericFactory` to convert JSON responses into Dart data models on a background thread. All models must be registered with `GenericFactory`.
-
 7. **Return Value:**  
    The result, or a parsed error, is returned to the repository (and thus, to the domain/presentation layer).
+8. **Result:**  
+   Clean, strongly-typed data or exceptions are returned up the chain.
 
 ---
 
-## Example Usage
+## Key Benefits
 
-```dart
-// In the domain or presentation layer:
-final result = await networkAPIRepository.getUserProfile(userId);
-
-// Internally:
--> getUserProfile() calls INetworkService.loadRequest() with appropriate APIRequestNodeType
--> AppAPIClient builds AppAPIRequest, fills with endpoint and headers using ApiRequestType & APIRequestNodeType
--> AppHttpClient executes request, handles exceptions and parses response
--> AppAPIClient transforms data using GenericFactory
--> Result delivered to UI
-```
-
----
-
-## Key Benefits & Inputs
-
+- **Clean Architecture:** Strict boundaries and dependency rules.
+- **Abstraction:** All core logic is interface-driven.
+- **Dependency Injection:** Enables easy mocking and testability.
 - **Highly Configurable:** Adding endpoints is as simple as updating an enum and a switch-case.
-- **Easy Testing:** Everything is injectable and mockable thanks to interfaces.
-- **Separation of Concerns:** Data layer is isolated from domain and presentation.
-- **Consistent Error Handling:** All errors are mapped for readability and UI presentation.
-- **Performance:** JSON parsing is offloaded to background threads.
+- **Layered:** Presentation, domain, and data are decoupled.
 - **Extensible:** Enum-driven architecture allows for rapid expansion without affecting existing code.
 - **Readability:** The use of switch-cases on enums makes endpoint logic explicit and easy to follow.
+- **Consistent Error Handling:** All errors are mapped for readability and UI presentation.
+- **Performance:** JSON parsing is offloaded to background threads.
+
 
 ---
 
@@ -181,9 +228,7 @@ final result = await networkAPIRepository.getUserProfile(userId);
 - **API Versioning:** Encapsulate versioning logic in `ApiRequestType` for easier upgrade paths.
 - **Retry/Timeout Logic:** Add configurable retry strategies in `AppHttpClient`.
 - **Metrics & Logging:** Integrate network metrics and detailed logging for observability.
-
 ---
 
 ## Summary
-
-This data layer architecture combines strong abstraction, scalable endpoint management, and robust error handling to provide a maintainable and extensible solution for REST API consumption in Flutter apps. By leveraging enums, dependency injection, and layered interfaces, it ensures that network logic is powerful yet easy to extend and test.
+The data layer is a robust, testable, and scalable foundation for REST API communication in Flutter. It fully embraces clean architecture, dependency injection, and interface-driven design, ensuring maintainability and extensibility as your application grows.

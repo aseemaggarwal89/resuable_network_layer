@@ -16,6 +16,31 @@ The data layer is responsible for:
 - Handling deserialization, error mapping, and environment configuration.
 - Facilitating unit testing and code reusability by using dependency injection and interfaces.
 
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph Data Layer
+        A[AppHttpClient] -->|implements| B[IAppHttpClient]
+        B --> C[INetworkService]
+        C --> D[NetworkAPIRepository]
+        D -->|implements| E[INetworkAPIRepository]
+    end
+
+    subgraph Domain Layer
+        G[Use Cases]
+        G --> E
+    end
+
+    subgraph App Configuration
+        H[AppConfiguration]
+        H --> A
+        H --> C
+    end
+
+    I[AppAPIClient] --> A
+```
+
 ### The data layer is implemented using **Clean Architecture**, which emphasizes:
 
 - **Separation of concerns:** Each layer has a single responsibility.
